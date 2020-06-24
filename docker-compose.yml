@@ -1,16 +1,23 @@
-version: 3.5
+version: "3.5"
 
 services:
   spider:
     build: .
     depends_on:
-      - db
-    env-file: .env
+      - pgdb
+    env_file: .env
+    volumes:
+      - .:/app
 
   pgdb:
     image: postgres:12.3
-    volume:
+    volumes:
       - postgresdata:/var/lib/postgresql/data
+    env_file: .env
 
   testdb:
     image: postgres:12.3
+    env_file: .env
+
+volumes:
+  postgresdata:

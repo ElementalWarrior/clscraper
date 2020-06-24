@@ -1,0 +1,7 @@
+#!/bin/bash
+dc() {
+    docker-compose -p clscraper_test $@
+}
+dc up -d testdb
+dc run -e PG_CLIENT_HOST=testdb spider python3.8 -B -m pytest tests
+dc stop testdb

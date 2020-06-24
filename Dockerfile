@@ -1,6 +1,19 @@
-FROM alpine:3.12
+FROM python:3.8.3
 
-RUN apk add --update --no-cache gcc musl-dev libffi-dev libxml2-dev libxslt-dev jpeg-dev curl-dev make python3 python3-dev tzdata git curl \
-&& python3 -m pip install  --upgrade pip \
+# RUN apk add --update --no-cache \
+#     musl-dev \
+#     libffi-dev \
+#     libxml2-dev \
+#     libxslt-dev \
+#     # jpeg-dev \
+#     # curl-dev \
+#     # make \
+
+RUN apt update && apt install gcc python3-dev curl python3-psycopg2 -y
+
+RUN python3 -m pip install --upgrade pip
+
+WORKDIR /app
+COPY . .
 
 RUN python3 -m pip install -r requirements.txt
