@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# This will create a vendor folder in your repo with all the libs that are imported
+# it makes intellisense convenient for external libs
+docker-compose run spider pip3 install -r requirements.txt --user  --upgrade --no-warn-script-location --force-reinstall
