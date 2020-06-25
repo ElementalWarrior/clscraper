@@ -17,3 +17,6 @@ WORKDIR /app
 COPY . .
 
 RUN python3 -m pip install -r requirements.txt
+RUN rm -rf /app/vendor
+
+CMD [ "scrapy", "crawl" ]

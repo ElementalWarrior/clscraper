@@ -18,3 +18,4 @@ class HousingListing(scrapy.Item):
     pictures = scrapy.Field()
     partial_scrape = scrapy.Field()
     datetime_scraped = scrapy.Field()
+    datetime_post_expires = scrapy.Field()

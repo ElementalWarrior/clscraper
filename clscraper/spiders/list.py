@@ -1,4 +1,6 @@
+import logging
 import re
+import sys
 
 from datetime import datetime
 from scrapy import Request, Spider
@@ -8,6 +10,7 @@ from clscraper.items import HousingListing
 
 class ListSpider(Spider):
     name = "listspider"
+    start_urls = ["https://vancouver.craigslist.org/d/apts-housing-for-rent/search/apa"]
     allowed_domains = ["vancouver.craigslist.org"]
 
     def parse(self, response):
@@ -51,7 +54,7 @@ class ListSpider(Spider):
             price = result.css(".result-meta > .result-price::text").get()
             match = re.match(r".?([0-9]+).?", price)
             price = int(match.group(1))
-            yield HousingListing(
+            listing = HousingListing(
                 id=int(result.css(".result-title").attrib["data-id"]),
                 url=result.css(".result-title").attrib["href"],
                 title=result.css(".result-title::text").get(),
@@ -64,3 +67,4 @@ class ListSpider(Spider):
                 datetime_scraped=datetime.utcnow(),
                 partial_scrape=True
             )
+            yield listing

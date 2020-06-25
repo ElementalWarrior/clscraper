@@ -18,10 +18,8 @@ class PostgresPipeline:
         pass
 
     def process_item(self, item, spider):
-        if isinstance(spider, ListSpider):
-            return
         session = Session()
-        if isinstance(spider, PostingSpider):
+        if isinstance(spider, (PostingSpider, ListSpider)):
             posting = session.query(Posting).filter(Posting.id == item["id"]).one_or_none()
 
             # upsert posting
@@ -29,7 +27,9 @@ class PostgresPipeline:
                 logger.debug(f"Updating {posting}")
                 for column in Posting.__mapper__.columns:
                     if column.name != "id":
-                        new_value = getattr(posting, column.name)
+                        if column.name not in item:
+                            continue
+                        new_value = item.get(column.name, None)
                         setattr(posting, column.name, new_value)
             else:
                 posting = Posting(**item)

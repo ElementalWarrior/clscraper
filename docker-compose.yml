@@ -1,7 +1,7 @@
 version: "3.5"
 
 services:
-  spider:
+  spider_posting:
     build: .
     image: clscraper
     depends_on:
@@ -9,12 +9,25 @@ services:
     env_file: .env
     volumes:
       - .:/app
+    command: "scrapy crawl postingspider"
+
+  spider_list:
+    build: .
+    image: clscraper
+    depends_on:
+      - pgdb
+    env_file: .env
+    volumes:
+      - .:/app
+    command: "scrapy crawl listspider"
 
   pgdb:
     image: postgres:12.3
     volumes:
       - postgresdata:/var/lib/postgresql/data
     env_file: .env
+    ports:
+      - "54320:5432"
 
   testdb:
     image: postgres:12.3

@@ -7,5 +7,5 @@ if [ -z "$CMD" ]; then
     CMD="tests"
 fi
 dc up -d testdb
-dc run --rm -e PG_CLIENT_HOST=testdb spider python3.8 -B -m pytest $CMD
+dc run --rm -e PG_CLIENT_HOST=testdb spider_posting python3.8 -B -m pytest $CMD
 dc stop testdb

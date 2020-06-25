@@ -1,26 +1,37 @@
+import logging
 import re
 import scrapy
+from time import sleep
 
 from datetime import datetime
+from dateutil.parser import parse as datetime_parse
 from lxml.html.soupparser import fromstring
 from lxml.html import tostring
 
 from clscraper.items import HousingListing
+from clscraper.models import Posting, session_scope
+
+logger = logging.getLogger(__name__)
 
 
 class PostingSpider(scrapy.Spider):
     name = "postingspider"
     allowed_domains = ["vancouver.craigslist.org"]
 
+    def start_requests(self):
+        with session_scope() as session:
+            for posting in session.query(Posting).filter(Posting.partial_scrape).all():
+                logging.warning(posting.url)
+                yield scrapy.Request(posting.url)
 
     def parse_neighborhood(self, response):
         value = response.css(".postingtitletext > small::text").get()
-
-        value = value.strip()
-        # location looks like `(Vancouver)`. lets remove the parens
-        value = value[1:] if value[0] == "(" else value
-        value = value[:-1] if value[-1] == ")" else value
-        return value
+        if value:
+            value = value.strip()
+            # location looks like `(Vancouver)`. lets remove the parens
+            value = value[1:] if value[0] == "(" else value
+            value = value[:-1] if value[-1] == ")" else value
+            return value
 
     def parse_price(self, response):
         price = response.css(".price::text").get()
@@ -73,7 +84,6 @@ class PostingSpider(scrapy.Spider):
             return baths, units
         return None, None
 
-
     def parse_description(self, response):
 
         desc = response.xpath('//*[@id="postingbody"]').extract_first()
@@ -90,7 +100,7 @@ class PostingSpider(scrapy.Spider):
         return innerHtml
 
     def parse_images(self, response):
-        imgs = [img.attrib["src"] for img in response.css(".slide img")]
+        imgs = [img.attrib["href"] for img in response.css("#thumbs a")]
         return imgs
 
     def parse_title(self, response):
@@ -101,7 +111,7 @@ class PostingSpider(scrapy.Spider):
         return response.css(".mapaddress::text").get()
 
     def parse_id(self, response):
-        for postinfo in  response.css(".postinginfo::text"):
+        for postinfo in response.css(".postinginfo::text"):
             text = postinfo.get()
             if re.match(r"post id:.*", text):
                 return int(text.replace("post id: ", ""))
@@ -111,27 +121,45 @@ class PostingSpider(scrapy.Spider):
 
     def parse_map(self, response):
         map_ = response.css("#map")
-        return {
-            "type": "radix",
-            "latitude": map_.attrib["data-latitude"],
-            "longitude": map_.attrib["data-longitude"],
-            "accuracy": map_.attrib["data-accuracy"],
-        }
+        if map_:
+            return {
+                "type": "radix",
+                "latitude": map_.attrib["data-latitude"],
+                "longitude": map_.attrib["data-longitude"],
+                "accuracy": map_.attrib["data-accuracy"],
+            }
 
     def parse_url(self, response):
         return response.url
 
     def parse_georegion(self, response):
-        return response.xpath('//meta[@name="geo.region"]').attrib["content"]
-        
+        meta = response.xpath('//meta[@name="geo.region"]')
+        if meta:
+            return meta.attrib["content"]
+
+    def parse_post_expires(self, response):
+        meta = response.xpath('//meta[@name="robots"]')
+        if meta:
+            for robot_param in meta.attrib["content"].split(","):
+                if robot_param.startswith("unavailable_after"):
+                    dt = robot_param.replace("unavailable_after: ", "")
+                    return datetime_parse(dt)
+
 
     def parse(self, response):
+        if response.css(".removed"):
+            id = int(re.match(r".*\/([0-9]+)\.html", response.url).group(1))
+            yield HousingListing(id=id, partial_scrape=False, url=response.url, datetime_scraped=datetime.utcnow())
+            return
+
         georegion = self.parse_georegion(response)
         currency = None
-        if georegion.startswith("CA"):
-            currency = "CAD"
-        elif georegion.startswith("US"):
-            currency = "USD"
+        if georegion:
+            currency = None
+            if georegion.startswith("CA"):
+                currency = "CAD"
+            elif georegion.startswith("US"):
+                currency = "USD"
         locations = [
             self.parse_neighborhood(response),
             self.parse_mapaddress(response),
@@ -154,6 +182,7 @@ class PostingSpider(scrapy.Spider):
             description=self.parse_description(response),
             images=self.parse_images(response),
             title=self.parse_title(response),
+            datetime_post_expires=self.parse_post_expires(response),
             partial_scrape=False,
             datetime_scraped=datetime.utcnow(),
         )

@@ -44,7 +44,7 @@ class Posting(DeclarativeBase):
 
     id = Column(BigInteger(), primary_key=True)
     url = Column(Text, nullable=False)
-    title = Column(Text, nullable=False)
+    title = Column(Text)
     description = Column(Text)
     images = Column(JSONB)
     price = Column(DECIMAL)
@@ -58,6 +58,7 @@ class Posting(DeclarativeBase):
     datetime_posted = Column(DateTime)
     partial_scrape = Column(Boolean, nullable=False)
     datetime_scraped = Column(DateTime, nullable=False)
+    datetime_post_expires = Column(DateTime)
 
     def __repr__(self):
         return f"<Posting id={self.id}>"
@@ -75,7 +76,7 @@ class PostingRevision(DeclarativeBase):
     posting_id = Column(BigInteger, ForeignKey("postings.id"))
 
     url = Column(Text, nullable=False)
-    title = Column(Text, nullable=False)
+    title = Column(Text)
     description = Column(Text)
     images = Column(JSONB)
     price = Column(DECIMAL)
@@ -89,6 +90,7 @@ class PostingRevision(DeclarativeBase):
     datetime_posted = Column(DateTime)
     partial_scrape = Column(Boolean, nullable=False)
     datetime_scraped = Column(DateTime, nullable=False)
+    datetime_post_expires = Column(DateTime)
 
     def __repr__(self):
-        return f"<Posting posting_id={self.posting_id} id={self.id}>"
+        return f"<PostingRevision posting_id={self.posting_id} id={self.id}>"

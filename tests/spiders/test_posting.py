@@ -71,7 +71,7 @@ def test_posting_realty(data_to_resp):
                     map_dict = l
             assert map_dict.get("type") == "radix"
 
-            assert r["images"]
+            assert len(r["images"]) > 1
             for src in r["images"]:
                 assert "images.craigslist.org" in src
 
