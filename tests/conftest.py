@@ -1,5 +1,9 @@
+import logging
 import pytest
 from scrapy.http import HtmlResponse
+
+logging.basicConfig(level=logging.DEBUG)
+
 
 @pytest.fixture()
 def load_data():
@@ -18,7 +22,7 @@ def data_to_resp(load_data):
         return response
     return _
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(autouse=True)
 def db():
     from clscraper.models import DeclarativeBase, engine
     DeclarativeBase.metadata.drop_all(engine)

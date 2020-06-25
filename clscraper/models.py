@@ -1,12 +1,21 @@
 from contextlib import contextmanager
-from sqlalchemy import event
+from sqlalchemy import (
+    Column,
+    Text,
+    Integer,
+    DECIMAL,
+    String,
+    DateTime,
+    Boolean,
+    ForeignKey,
+    PrimaryKeyConstraint,
+    create_engine,
+)
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Column, Text, Integer, DECIMAL, String, DateTime, Boolean, ForeignKey
-from sqlalchemy import *
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql.expression import func
+from sqlalchemy.types import BigInteger
 
 from .settings import Config
 
@@ -33,7 +42,7 @@ def session_scope():
 class Posting(DeclarativeBase):
     __tablename__ = "postings"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger(), primary_key=True)
     url = Column(Text, nullable=False)
     title = Column(Text, nullable=False)
     description = Column(Text)
@@ -49,18 +58,21 @@ class Posting(DeclarativeBase):
     datetime_posted = Column(DateTime)
     partial_scrape = Column(Boolean, nullable=False)
     datetime_scraped = Column(DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<Posting id={self.id}>"
 
 
 class PostingRevision(DeclarativeBase):
     __tablename__ = "posting_revisions"
     __table_args__ = (
-        PrimaryKeyConstraint('id', 'posting_id'),
+        PrimaryKeyConstraint("id", "posting_id"),
         {},
     )
 
     # id serves as revision_id
-    id = Column(Integer)
-    posting_id = Column(Integer, ForeignKey("postings.id"))
+    id = Column(BigInteger())
+    posting_id = Column(BigInteger, ForeignKey("postings.id"))
 
     url = Column(Text, nullable=False)
     title = Column(Text, nullable=False)
@@ -77,3 +89,6 @@ class PostingRevision(DeclarativeBase):
     datetime_posted = Column(DateTime)
     partial_scrape = Column(Boolean, nullable=False)
     datetime_scraped = Column(DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<Posting posting_id={self.posting_id} id={self.id}>"
