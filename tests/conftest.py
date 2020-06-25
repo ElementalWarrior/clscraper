@@ -17,3 +17,9 @@ def data_to_resp(load_data):
         response = HtmlResponse(url, body=body.encode("utf-8"))
         return response
     return _
+
+@pytest.fixture(scope="session", autouse=True)
+def db():
+    from clscraper.models import DeclarativeBase, engine
+    DeclarativeBase.metadata.drop_all(engine)
+    DeclarativeBase.metadata.create_all(engine)
