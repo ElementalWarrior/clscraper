@@ -1,12 +1,15 @@
 from contextlib import contextmanager
 from sqlalchemy import *
 from sqlalchemy.engine.url import URL
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from .settings import Config
 
-engine = create_engine(URL(**Config.DATABASE))
+url = URL(**Config.DATABASE)
+engine = create_engine(url)
 Session = sessionmaker(bind=engine)
+DeclarativeBase = declarative_base()
 
 
 @contextmanager

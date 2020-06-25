@@ -3,6 +3,7 @@ version: "3.5"
 services:
   spider:
     build: .
+    image: clscraper
     depends_on:
       - pgdb
     env_file: .env

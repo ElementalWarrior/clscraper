@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker-compose run spider python -B /usr/local/bin/alembic "$@"
