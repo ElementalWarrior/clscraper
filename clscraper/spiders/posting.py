@@ -21,7 +21,6 @@ class PostingSpider(scrapy.Spider):
     def start_requests(self):
         with session_scope() as session:
             for posting in session.query(Posting).filter(Posting.partial_scrape).all():
-                logging.warning(posting.url)
                 yield scrapy.Request(posting.url)
 
     def parse_neighborhood(self, response):
@@ -37,6 +36,7 @@ class PostingSpider(scrapy.Spider):
         price = response.css(".price::text").get()
         if not price:
             return
+        price = price.replace(",", "")
         # it appears price must be an integer
         match = re.match(r".?([0-9]+).?", price)
         return int(match.group(1))

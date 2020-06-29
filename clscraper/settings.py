@@ -30,3 +30,7 @@ ITEM_PIPELINES = {
 
 DUPEFILTER_DEBUG = True
 CLOSESPIDER_ERRORCOUNT = 1
+
+ROTATING_PROXY_LIST = {
+    os.getenv("http_proxy")
+}

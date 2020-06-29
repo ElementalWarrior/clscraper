@@ -1,0 +1,17 @@
+#!/bin/bash -e
+
+# setup proxy to use to scrape
+ps aux | grep ssh | grep clscraper_prxy | awk '{print $2}' | xargs kill
+SSHHOST=deploy@wombat.aardvarkgameservers.com
+ssh -D 8080 -gTfnN -S clscraper_prxy $SSHHOST
+
+if ps aux | grep pproxy | grep -v "grep" ; then
+    killall pproxy
+fi
+pproxy -l http://:8081 -r "socks5://127.0.0.1:8080" --daemon
+
+export GATEWAY_IP=$(docker network inspect clscraper_default --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}')
+# docker-compose run spider_list bash
+docker-compose up spider_list spider_posting
+
+ssh -S clscraper_prxy -o exit $SSHHOST

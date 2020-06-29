@@ -7,9 +7,14 @@ services:
     depends_on:
       - pgdb
     env_file: .env
+    environment:
+      - http_proxy=$GATEWAY_IP:8081
+      - https_proxy=$GATEWAY_IP:8081
     volumes:
       - .:/app
-    command: "scrapy crawl postingspider"
+    command: bash -c "while :; do scrapy crawl postingspider; sleep 60; done"
+    networks:
+      - clscraper_default
 
   spider_list:
     build: .
@@ -17,9 +22,14 @@ services:
     depends_on:
       - pgdb
     env_file: .env
+    environment:
+      - http_proxy=$GATEWAY_IP:8081
+      - https_proxy=$GATEWAY_IP:8081
     volumes:
       - .:/app
-    command: "scrapy crawl listspider"
+    networks:
+      - clscraper_default
+    command: bash -c "while :; do scrapy crawl listspider; sleep 60; done"
 
   pgdb:
     image: postgres:12.3
@@ -28,6 +38,8 @@ services:
     env_file: .env
     ports:
       - "54320:5432"
+    networks:
+      - clscraper_default
 
   testdb:
     image: postgres:12.3
@@ -35,3 +47,8 @@ services:
 
 volumes:
   postgresdata:
+
+networks:
+  clscraper_default:
+      name: clscraper_default
+      driver: bridge

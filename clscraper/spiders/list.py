@@ -7,6 +7,7 @@ from scrapy import Request, Spider
 from scrapy.loader import ItemLoader
 
 from clscraper.items import HousingListing
+from clscraper.models import Posting, session_scope
 
 class ListSpider(Spider):
     name = "listspider"
@@ -14,6 +15,7 @@ class ListSpider(Spider):
     allowed_domains = ["vancouver.craigslist.org"]
 
     def parse(self, response):
+        listings = []
         for result in response.css(".result-row"):
 
             #get num bedrooms and floor area from housing div
@@ -67,4 +69,15 @@ class ListSpider(Spider):
                 datetime_scraped=datetime.utcnow(),
                 partial_scrape=True
             )
-            yield listing
+            listings.append(listing)
+        
+        ids = [listing["id"] for listing in listings]
+        logging.warning(f"ids {ids}")
+        with session_scope() as session:
+            ids = [row[0] for row in session.query(Posting.id).filter(Posting.id.in_(ids)).all()]
+            logging.warning(f"ids2 {ids}")
+            for listing in listings:
+                if listing["id"] not in ids:
+                    yield listing
+                else:
+                    logging.warning(f"Found an already scraped listing id={listing['id']}")
