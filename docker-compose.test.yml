@@ -1,0 +1,19 @@
+version: "3.5"
+
+services:
+  scraper_tests:
+    build: .
+    image: clscraper
+    depends_on:
+      - testdb
+    volumes:
+      - .:/app
+    environment:
+      - PG_CLIENT_HOST=testdb
+      - POSTGRES_PASSWORD=password
+    command: pytest --maxfail=1 tests"
+
+  testdb:
+    image: postgres:12.3
+    environment:
+      - POSTGRES_PASSWORD=password

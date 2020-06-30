@@ -1,5 +1,6 @@
 import logging
 import pytest
+from scrapy import Request
 from scrapy.http import HtmlResponse
 
 logging.basicConfig(level=logging.DEBUG)
@@ -16,9 +17,12 @@ def load_data():
 
 @pytest.fixture()
 def data_to_resp(load_data):
-    def _(url, path):
+    def _(url, path, listing_type):
         body = load_data(path)
-        response = HtmlResponse(url, body=body.encode("utf-8"))
+        response = HtmlResponse(url, body=body.encode("utf-8"), request=Request(url, meta=dict(
+            number_of_pages_to_scrape=-1,
+            listing_type=listing_type,
+        )))
         return response
     return _
 

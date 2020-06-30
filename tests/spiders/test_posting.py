@@ -1,12 +1,14 @@
 from datetime import datetime
 from unittest.mock import patch
 
+from clscraper.items import HousingListing
 from clscraper.spiders.posting import PostingSpider
 
 def test_posting(data_to_resp):
     url = "https://vancouver.craigslist.org/van/apa/d/vancouver-living-in-hermitage-2-br/7146512696.html"
     path = "posting_20200624.html"
-    response = data_to_resp(url, path)
+    listing_type = "apa"
+    response = data_to_resp(url, path, listing_type)
     now = datetime.utcnow()
     with patch("clscraper.spiders.posting.datetime") as mock_datetime:
         mock_datetime.utcnow.return_value = now
@@ -20,6 +22,7 @@ def test_posting(data_to_resp):
                 "CA-BC",
             ]
             for l in location_hints:
+                l = HousingListing.location_str_to_dict(l)
                 assert l in r["location"]
             map_dict = None
             for l in r["location"]:
@@ -46,11 +49,13 @@ def test_posting(data_to_resp):
 
             assert r["price"] == 3450
             assert r["price_currency"] == "CAD"
+            assert r["listing_type"] == "apa"
 
 def test_posting_realty(data_to_resp):
     url = "https://vancouver.craigslist.org/rds/reb/d/surrey-hottest-deal-of-the-week-5-bed-4/7147938227.html"
     path = "posting_realty_20200624.html"
-    response = data_to_resp(url, path)
+    listing_type = "rea"
+    response = data_to_resp(url, path, listing_type=listing_type)
     now = datetime.utcnow()
     with patch("clscraper.spiders.posting.datetime") as mock_datetime:
         mock_datetime.utcnow.return_value = now
@@ -64,6 +69,7 @@ def test_posting_realty(data_to_resp):
                 "CA-BC",
             ]
             for l in location_hints:
+                l = HousingListing.location_str_to_dict(l)
                 assert l in r["location"]
             map_dict = None
             for l in r["location"]:
@@ -87,3 +93,4 @@ def test_posting_realty(data_to_resp):
 
             assert r["price"] is None
             assert r["price_currency"] == "CAD"
+            assert r["listing_type"] == "rea"

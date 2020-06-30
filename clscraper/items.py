@@ -19,3 +19,8 @@ class HousingListing(scrapy.Item):
     partial_scrape = scrapy.Field()
     datetime_scraped = scrapy.Field()
     datetime_post_expires = scrapy.Field()
+    listing_type = scrapy.Field()
+
+    @staticmethod
+    def location_str_to_dict(str):
+        return f'{{"type":"string","value":"{str}"}}'

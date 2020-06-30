@@ -1,11 +1,11 @@
 #!/bin/bash
 dc() {
-    docker-compose -p clscraper_test $@
+    docker-compose -p clscraper_test -f docker-compose.test.yml $@
 }
 CMD=$@
 if [ -z "$CMD" ]; then
     CMD="tests"
 fi
 dc up -d testdb
-dc run --rm -e PG_CLIENT_HOST=testdb spider_posting python3.8 -B -m pytest $CMD
+dc run --rm scraper_tests python3.8 -B -m pytest $CMD
 dc stop testdb

@@ -4,18 +4,44 @@ import sys
 
 from datetime import datetime
 from scrapy import Request, Spider
+from scrapy.http import HtmlResponse
 from scrapy.loader import ItemLoader
+from urllib.parse import urljoin
 
 from clscraper.items import HousingListing
 from clscraper.models import Posting, session_scope
+
+logger = logging.getLogger(__name__)
 
 class ListSpider(Spider):
     name = "listspider"
     start_urls = ["https://vancouver.craigslist.org/d/apts-housing-for-rent/search/apa"]
     allowed_domains = ["vancouver.craigslist.org"]
 
-    def parse(self, response):
+    def __init__(self, *args, listing_type, number_of_pages_to_scrape=1, url=None, **kwargs):
+        """
+
+        :param listing_type: Listing type: IE motorcycle parts, photography, apts/housing, etc
+        :param number_of_pages_to_scrape: Number of pages to scrape, -1 for unlimited
+        :param url: url to scrape, set to use different listing pages
+        """
+        number_of_pages_to_scrape = int(number_of_pages_to_scrape)
+        self.listing_type = listing_type
+        self.number_of_pages_to_scrape = number_of_pages_to_scrape - 1 if number_of_pages_to_scrape > 0 else number_of_pages_to_scrape
+        if url:
+            self.start_urls = [url]
+        assert self.listing_type, "Listing type not specified"
+        super().__init__(*args, **kwargs)
+
+    def parse(self, response: HtmlResponse):
+        """Parse function that scrapes HousingListing items from craigslist list pages.
+
+        Gets inserted into the db with partial_scrape=True. Then the posting spider will pull that list of paritial
+        scrapes and fill out the rest of the posting.
+        """
         listings = []
+        
+        # go through each listing row and build a list of listing items
         for result in response.css(".result-row"):
 
             #get num bedrooms and floor area from housing div
@@ -37,7 +63,7 @@ class ListSpider(Spider):
             if floor_area:
                 floor_area = int(floor_area)
 
-            location = result.css(".result-hood::text").get()
+            location = HousingListing.location_str_to_dict(result.css(".result-hood::text").get())
             if location:
                 location = location.strip()
                 # location looks like `(Vancouver)`. lets remove the parens
@@ -67,17 +93,31 @@ class ListSpider(Spider):
                 floor_area_units=floor_area_units,
                 location=[location],
                 datetime_scraped=datetime.utcnow(),
-                partial_scrape=True
+                partial_scrape=True,
+                listing_type=self.listing_type
             )
             listings.append(listing)
-        
+
+        # take the list of scraped items and compare them to the database for stored values
         ids = [listing["id"] for listing in listings]
-        logging.warning(f"ids {ids}")
         with session_scope() as session:
             ids = [row[0] for row in session.query(Posting.id).filter(Posting.id.in_(ids)).all()]
-            logging.warning(f"ids2 {ids}")
             for listing in listings:
                 if listing["id"] not in ids:
                     yield listing
                 else:
-                    logging.warning(f"Found an already scraped listing id={listing['id']}")
+                    logging.debug(f"Found an already scraped listing id={listing['id']}")
+
+        # we pass along number of pages to scrape by using meta, if meta is not defined 
+        if "number_of_pages_to_scrape" in response.meta:
+            number_of_pages_to_scrape = response.meta.get("number_of_pages_to_scrape", None)
+        else:
+            number_of_pages_to_scrape = self.number_of_pages_to_scrape
+
+        # if we configured it, scrape X pages
+        next_anchor = response.css("a.next.button")
+        if (number_of_pages_to_scrape or number_of_pages_to_scrape == -1) and next_anchor:
+            url = urljoin(response.url, next_anchor.attrib["href"])
+            yield Request(url, meta=dict(
+                number_of_pages_to_scrape=number_of_pages_to_scrape-1 if number_of_pages_to_scrape != -1 else number_of_pages_to_scrape
+            ))

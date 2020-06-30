@@ -1,17 +1,22 @@
 from datetime import datetime
+from scrapy import Item
 from unittest.mock import patch
 
 from clscraper.spiders.list import ListSpider
 
 def test_parse(data_to_resp):
     now = datetime.utcnow()
-    url = "vancouver.craigslist.example.com"
+    url = "http://vancouver.craigslist.example.com"
     path = "list_response_20200623.html"
-    response = data_to_resp(url, path)
+    listing_type = "apa"
+    response = data_to_resp(url, path, listing_type)
     with patch("clscraper.spiders.list.datetime") as mock_datetime:
         mock_datetime.utcnow.return_value = now
-        results = ListSpider().parse(response)
+        results = ListSpider(listing_type=listing_type).parse(response)
         for res in results:
+            # dont assert on the yield Request(...) results
+            if not isinstance(res, Item):
+                continue
             assert res["datetime_scraped"] == now
             assert res["partial_scrape"]
             assert res["price_currency"] == "CAD"
@@ -24,17 +29,20 @@ def test_parse(data_to_resp):
             if res.get("floor_area", None):
                 assert isinstance(res["floor_area"], int)
             assert len(res["location"]) > 0
-            print(res)
 
 def test_parse_realty(data_to_resp):
     now = datetime.utcnow()
-    url = "vancouver.craigslist.example.com"
+    url = "http://vancouver.craigslist.example.com"
     path = "list_realty_response_20200624.html"
-    response = data_to_resp(url, path)
+    listing_type = "rea"
+    response = data_to_resp(url, path, listing_type)
     with patch("clscraper.spiders.list.datetime") as mock_datetime:
         mock_datetime.utcnow.return_value = now
-        results = ListSpider().parse(response)
+        results = ListSpider(listing_type=listing_type).parse(response)
         for res in results:
+            # dont assert on the yield Request(...) results
+            if not isinstance(res, Item):
+                continue
             assert res["datetime_scraped"] == now
             assert res["partial_scrape"]
             assert res["price_currency"] == "CAD"
@@ -47,4 +55,3 @@ def test_parse_realty(data_to_resp):
             if res.get("floor_area", None):
                 assert isinstance(res["floor_area"], int)
             assert len(res["location"]) > 0
-            print(res)

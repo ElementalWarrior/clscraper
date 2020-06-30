@@ -29,7 +29,10 @@ services:
       - .:/app
     networks:
       - clscraper_default
-    command: bash -c "while :; do scrapy crawl listspider; sleep 60; done"
+    # command to scrape all listings
+    # command: bash -c "while :; do scrapy crawl listspider -a number_of_pages_to_scrape=-1 -a listing_type=rea -a url=https://vancouver.craigslist.org/d/real-estate/search/rea; sleep 60; done"
+    # command to scrape first page every 60 seconds 
+    command: bash -c "while :; do scrapy crawl listspider -a listing_type=apa; sleep 60; done"
 
   pgdb:
     image: postgres:12.3

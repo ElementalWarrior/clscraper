@@ -1,17 +1,25 @@
 #!/bin/bash -e
 
-# setup proxy to use to scrape
-ps aux | grep ssh | grep clscraper_prxy | awk '{print $2}' | xargs kill
+### setup ssh tunnel to use as proxy to scrape
+
+# kill existing ssh tunnel if exists
+if ps aux | grep ssh | grep -q clscraper_prxy ; then
+    ps aux | grep ssh | grep clscraper_prxy | awk '{print $2}' | xargs kill
+fi
 SSHHOST=deploy@wombat.aardvarkgameservers.com
 ssh -D 8080 -gTfnN -S clscraper_prxy $SSHHOST
 
+### scrapy doesn't support socks proxies, use pproxy to forward to the ssh proxy
+
+# kill existing pproxy if exists
 if ps aux | grep pproxy | grep -v "grep" ; then
     killall pproxy
 fi
 pproxy -l http://:8081 -r "socks5://127.0.0.1:8080" --daemon
 
+
+# to access the host port, need to use docker gateway
 export GATEWAY_IP=$(docker network inspect clscraper_default --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}')
-# docker-compose run spider_list bash
 docker-compose up spider_list spider_posting
 
 ssh -S clscraper_prxy -o exit $SSHHOST

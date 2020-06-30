@@ -8,7 +8,8 @@ from clscraper.spiders.posting import PostingSpider
 def test_posting(data_to_resp):
     url = "https://vancouver.craigslist.org/rds/reb/d/surrey-hottest-deal-of-the-week-5-bed-4/7147938227.html"
     path = "posting_realty_20200624.html"
-    response = data_to_resp(url, path)
+    listing_type = "apa"
+    response = data_to_resp(url, path, listing_type="apa")
     now = datetime.utcnow()
     with patch("clscraper.spiders.posting.datetime") as mock_datetime:
         mock_datetime.utcnow.return_value = now

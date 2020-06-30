@@ -12,7 +12,8 @@ def test_posting_revision():
             title="Testing",
             url="Testing",
             partial_scrape=True,
-            datetime_scraped=datetime.utcnow()
+            datetime_scraped=datetime.utcnow(),
+            listing_type="apa",
         )
         posting = Posting(id=1, **kwargs)
         one = PostingRevision(id=1, posting_id=posting.id, **kwargs)

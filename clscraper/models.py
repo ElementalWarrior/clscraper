@@ -59,6 +59,7 @@ class Posting(DeclarativeBase):
     partial_scrape = Column(Boolean, nullable=False)
     datetime_scraped = Column(DateTime, nullable=False)
     datetime_post_expires = Column(DateTime)
+    listing_type = Column(String(50), nullable=False)
 
     def __repr__(self):
         return f"<Posting id={self.id}>"
@@ -91,6 +92,7 @@ class PostingRevision(DeclarativeBase):
     partial_scrape = Column(Boolean, nullable=False)
     datetime_scraped = Column(DateTime, nullable=False)
     datetime_post_expires = Column(DateTime)
+    listing_type = Column(String(50), nullable=False)
 
     def __repr__(self):
         return f"<PostingRevision posting_id={self.posting_id} id={self.id}>"

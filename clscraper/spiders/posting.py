@@ -21,7 +21,9 @@ class PostingSpider(scrapy.Spider):
     def start_requests(self):
         with session_scope() as session:
             for posting in session.query(Posting).filter(Posting.partial_scrape).all():
-                yield scrapy.Request(posting.url)
+                yield scrapy.Request(posting.url, meta=dict(
+                    listing_type=posting.listing_type
+                ))
 
     def parse_neighborhood(self, response):
         value = response.css(".postingtitletext > small::text").get()
@@ -160,11 +162,13 @@ class PostingSpider(scrapy.Spider):
                 currency = "CAD"
             elif georegion.startswith("US"):
                 currency = "USD"
-        locations = [
+        location_strs = [HousingListing.location_str_to_dict(str) for str in [
             self.parse_neighborhood(response),
             self.parse_mapaddress(response),
-            self.parse_map(response),
             georegion,
+        ]]
+        locations = location_strs + [
+            self.parse_map(response),
         ]
         locations = [l for l in locations if l]
         floor_area, floor_units = self.parse_floor_area(response)
@@ -185,5 +189,6 @@ class PostingSpider(scrapy.Spider):
             datetime_post_expires=self.parse_post_expires(response),
             partial_scrape=False,
             datetime_scraped=datetime.utcnow(),
+            listing_type=response.meta["listing_type"]
         )
         yield HousingListing(**kwargs)
